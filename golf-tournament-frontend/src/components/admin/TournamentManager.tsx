@@ -1,207 +1,310 @@
-// src/components/admin/TournamentManager.tsx
-import React, { useState } from 'react';
-import { tournamentService, adminService, type Tournament } from '../../services/apiService';
+// src/components/admin/TeamManager.tsx
+import React, { useState } from "react";
+import { teamService, CreateTeamRequest } from "../../services/apiService";
+import { useTournament } from "../../contexts/TournamentContext";
 
+const TeamManager: React.FC = () => {
+  const { currentTournament, teams, setTeams } = useTournament();
 
-const TournamentManager: React.FC = () => {
-  const [name, setName] = useState('');
-  const [location, setLocation] = useState('');
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
-  const [currentTournament, setCurrentTournament] = useState<Tournament | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [saving, setSaving] = useState(false);
-  const [deletingAll, setDeletingAll] = useState(false);
+  const [name, setName] = useState("");
+  const [p1, setP1] = useState("");
+  const [p2, setP2] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [successMsg, setSuccessMsg] = useState("");
+  const [errorMsg, setErrorMsg] = useState("");
 
-  const handleCreate = async (e: React.FormEvent) => {
+  const clearMessages = () => {
+    setSuccessMsg("");
+    setErrorMsg("");
+  };
+
+  const clearForm = () => {
+    setName("");
+    setP1("");
+    setP2("");
+    clearMessages();
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
-    setSaving(true);
+
+    if (!currentTournament) {
+      setErrorMsg("❌ No tournament selected");
+      return;
+    }
+
+    if (!name || !p1 || !p2) {
+      setErrorMsg("❌ Please fill in all fields");
+      return;
+    }
+
+    const tid = currentTournament.tournamentId;
+    setLoading(true);
 
     try {
-      // createTournament returns AxiosResponse<Tournament>
-      const created = await tournamentService.createTournament({
-      name,
-      location,
-      startDate,
-      endDate,
-})
+      // Fixed: Include both name and teamName properties
+      await teamService.createTeam({
+        name: name, // Add this line
+        teamName: name,
+        player1Name: p1,
+        player2Name: p2,
+        tournamentId: tid,
+      });
 
-      setCurrentTournament(created);
-      localStorage.setItem('currentTournament', JSON.stringify(created));
+      // ✅ Refetch to stay perfectly in sync with server
+      const fresh = await teamService.getTeamsByTournament(tid);
+      setTeams(fresh);
 
-      // clear form
-      setName('');
-      setLocation('');
-      setStartDate('');
-      setEndDate('');
+      setSuccessMsg("✅ Team created successfully!");
+      clearForm();
     } catch (err: any) {
-      console.error('Create tournament failed:', err);
-      const msg =
-        err?.response?.data?.message ||
-        err?.response?.data?.title ||
-        err?.response?.data?.detail ||
-        err?.message ||
-        'Failed to create tournament';
-      setError(msg);
+      console.error("Error creating team:", err);
+      setErrorMsg(`❌ Error: ${err.message || "Failed to create team"}`);
     } finally {
-      setSaving(false);
+      setLoading(false);
     }
   };
 
-  const handleDeleteAll = async () => {
-    const ok = window.confirm(
-      '⚠️ This will permanently delete ALL tournaments (and related teams/scores). Continue?'
+  const handleDeleteTeam = async (teamId: number) => {
+    if (!window.confirm("Are you sure you want to delete this team?")) return;
+
+    try {
+      await teamService.deleteTeam(teamId);
+
+      // Update local state
+      if (currentTournament) {
+        const fresh = await teamService.getTeamsByTournament(
+          currentTournament.tournamentId
+        );
+        setTeams(fresh);
+      }
+
+      setSuccessMsg("✅ Team deleted successfully!");
+    } catch (err: any) {
+      console.error("Error deleting team:", err);
+      setErrorMsg(`❌ Error: ${err.message || "Failed to delete team"}`);
+    }
+  };
+
+  if (!currentTournament) {
+    return (
+      <div style={{ padding: "20px", textAlign: "center" }}>
+        <h2>Team Management</h2>
+        <p>Please select a tournament first.</p>
+      </div>
     );
-    if (!ok) return;
-
-    setError(null);
-    setDeletingAll(true);
-    try {
-      // Since there is no deleteAllTournaments() service,
-      // fetch all, then delete one-by-one.
-      // in TournamentManager.tsx -> handleDeleteAll
-       const tournaments = await tournamentService.getTournaments();
-// Use admin delete for each id
-      for (const t of tournaments) {
-        await adminService.deleteTournament(t.tournamentId);
-}
-
-
-      setCurrentTournament(null);
-      localStorage.removeItem('currentTournament');
-      alert('All tournaments deleted.');
-    } catch (err: any) {
-      console.error('Delete all tournaments failed:', err);
-      const msg =
-        err?.response?.data?.message ||
-        err?.response?.data?.title ||
-        err?.response?.data?.detail ||
-        err?.message ||
-        'Failed to delete all tournaments';
-      setError(msg);
-    } finally {
-      setDeletingAll(false);
-    }
-  };
+  }
 
   return (
-    <div style={{ maxWidth: 640, margin: '0 auto', padding: 20 }}>
-      <h2>🛠️ Tournament Manager</h2>
+    <div style={{ padding: "20px", maxWidth: "800px", margin: "0 auto" }}>
+      <h2>Team Management</h2>
+      <h3>Tournament: {currentTournament.name}</h3>
 
-      <form onSubmit={handleCreate} style={{ display: 'grid', gap: 12 }}>
-        <label>
-          Name
-          <input
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            required
-            style={{ width: '100%', padding: 8 }}
-          />
-        </label>
-
-        <label>
-          Location
-          <input
-            type="text"
-            value={location}
-            onChange={(e) => setLocation(e.target.value)}
-            required
-            style={{ width: '100%', padding: 8 }}
-          />
-        </label>
-
-        <label>
-          Start Date
-          <input
-            type="date"
-            value={startDate}
-            onChange={(e) => setStartDate(e.target.value)}
-            required
-            style={{ width: '100%', padding: 8 }}
-          />
-        </label>
-
-        <label>
-          End Date
-          <input
-            type="date"
-            value={endDate}
-            onChange={(e) => setEndDate(e.target.value)}
-            required
-            style={{ width: '100%', padding: 8 }}
-          />
-        </label>
-
-        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-          <button
-            type="submit"
-            disabled={saving}
-            style={{
-              padding: '10px 16px',
-              border: 'none',
-              borderRadius: 8,
-              background: '#007bff',
-              color: '#fff',
-              cursor: 'pointer',
-            }}
-          >
-            {saving ? 'Creating…' : 'Create Tournament'}
-          </button>
-
-          <button
-            type="button"
-            onClick={handleDeleteAll}
-            disabled={deletingAll}
-            style={{
-              padding: '10px 16px',
-              border: 'none',
-              borderRadius: 8,
-              background: '#d32f2f',
-              color: '#fff',
-              cursor: 'pointer',
-            }}
-          >
-            {deletingAll ? 'Deleting…' : '🗑️ Delete All Tournaments'}
-          </button>
-        </div>
-      </form>
-
-      {error && (
-        <p style={{ color: 'red', marginTop: 12 }}>
-          {error}
-        </p>
-      )}
-
-      {currentTournament && (
+      {/* Messages */}
+      {successMsg && (
         <div
           style={{
-            marginTop: 20,
-            padding: 16,
-            border: '1px solid #e0e0e0',
-            borderRadius: 8,
-            background: '#f8f9fa',
+            background: "#d4edda",
+            color: "#155724",
+            padding: "10px",
+            borderRadius: "5px",
+            marginBottom: "15px",
+            border: "1px solid #c3e6cb",
           }}
         >
-          <h3 style={{ margin: 0 }}>{currentTournament.name}</h3>
-          {currentTournament.location && (
-            <p style={{ margin: '6px 0' }}>{currentTournament.location}</p>
-          )}
-          <p style={{ margin: '6px 0' }}>
-            {new Date(currentTournament.startDate).toLocaleDateString()} —{' '}
-            {new Date(currentTournament.endDate).toLocaleDateString()}
-          </p>
-          {currentTournament.status && (
-            <p style={{ margin: '6px 0' }}>
-              Status: {currentTournament.status}
-            </p>
-          )}
-          <small>ID: {currentTournament.tournamentId}</small>
+          {successMsg}
         </div>
       )}
+
+      {errorMsg && (
+        <div
+          style={{
+            background: "#f8d7da",
+            color: "#721c24",
+            padding: "10px",
+            borderRadius: "5px",
+            marginBottom: "15px",
+            border: "1px solid #f5c6cb",
+          }}
+        >
+          {errorMsg}
+        </div>
+      )}
+
+      {/* Create Team Form */}
+      <div
+        style={{
+          background: "#f8f9fa",
+          padding: "20px",
+          borderRadius: "8px",
+          marginBottom: "30px",
+        }}
+      >
+        <h3>Create New Team</h3>
+        <form onSubmit={handleSubmit}>
+          <div style={{ marginBottom: "15px" }}>
+            <label
+              style={{
+                display: "block",
+                marginBottom: "5px",
+                fontWeight: "bold",
+              }}
+            >
+              Team Name:
+            </label>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Enter team name"
+              style={{
+                width: "100%",
+                padding: "8px 12px",
+                border: "1px solid #ddd",
+                borderRadius: "4px",
+                fontSize: "14px",
+              }}
+            />
+          </div>
+
+          <div style={{ marginBottom: "15px" }}>
+            <label
+              style={{
+                display: "block",
+                marginBottom: "5px",
+                fontWeight: "bold",
+              }}
+            >
+              Player 1 Name:
+            </label>
+            <input
+              type="text"
+              value={p1}
+              onChange={(e) => setP1(e.target.value)}
+              placeholder="Enter player 1 name"
+              style={{
+                width: "100%",
+                padding: "8px 12px",
+                border: "1px solid #ddd",
+                borderRadius: "4px",
+                fontSize: "14px",
+              }}
+            />
+          </div>
+
+          <div style={{ marginBottom: "15px" }}>
+            <label
+              style={{
+                display: "block",
+                marginBottom: "5px",
+                fontWeight: "bold",
+              }}
+            >
+              Player 2 Name:
+            </label>
+            <input
+              type="text"
+              value={p2}
+              onChange={(e) => setP2(e.target.value)}
+              placeholder="Enter player 2 name"
+              style={{
+                width: "100%",
+                padding: "8px 12px",
+                border: "1px solid #ddd",
+                borderRadius: "4px",
+                fontSize: "14px",
+              }}
+            />
+          </div>
+
+          <div style={{ display: "flex", gap: "10px" }}>
+            <button
+              type="submit"
+              disabled={loading}
+              style={{
+                background: loading ? "#ccc" : "#28a745",
+                color: "white",
+                border: "none",
+                padding: "10px 20px",
+                borderRadius: "5px",
+                cursor: loading ? "not-allowed" : "pointer",
+              }}
+            >
+              {loading ? "Creating..." : "Create Team"}
+            </button>
+            <button
+              type="button"
+              onClick={clearForm}
+              style={{
+                background: "#6c757d",
+                color: "white",
+                border: "none",
+                padding: "10px 20px",
+                borderRadius: "5px",
+                cursor: "pointer",
+              }}
+            >
+              Clear
+            </button>
+          </div>
+        </form>
+      </div>
+
+      {/* Teams List */}
+      <div>
+        <h3>Existing Teams ({teams.length})</h3>
+        {teams.length === 0 ? (
+          <p>No teams found for this tournament.</p>
+        ) : (
+          <div style={{ display: "grid", gap: "15px" }}>
+            {teams.map((team) => (
+              <div
+                key={team.teamId}
+                style={{
+                  background: "white",
+                  border: "1px solid #ddd",
+                  borderRadius: "8px",
+                  padding: "15px",
+                  boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+                }}
+              >
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                  }}
+                >
+                  <div>
+                    <h4 style={{ margin: "0 0 8px 0" }}>
+                      {team.teamName}
+                    </h4>
+                    <p style={{ margin: 0, color: "#666" }}>
+                      {team.player1Name} & {team.player2Name}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => handleDeleteTeam(team.teamId)}
+                    style={{
+                      background: "#dc3545",
+                      color: "white",
+                      border: "none",
+                      padding: "6px 12px",
+                      borderRadius: "4px",
+                      cursor: "pointer",
+                      fontSize: "12px",
+                    }}
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 };
 
-export default TournamentManager;
+export default TeamManager;

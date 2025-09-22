@@ -1,22 +1,25 @@
-using System.Text.Json.Serialization;
+// Tournament.cs - Fix nullable warnings
+using GolfTournamentData.Models;
+using System.ComponentModel.DataAnnotations;
 
-namespace GolfTournamentData.Models
+namespace GolfTournamentData
 {
     public class Tournament
     {
         public int TournamentId { get; set; }
-        public string Name { get; set; } = string.Empty;
+
+        [Required]
+        public string Name { get; set; } = string.Empty;  // Fix nullable warning
+
+        public string? Location { get; set; }  // Optional location property
+
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }
 
-        // ✅ New property
-        public string Status { get; set; } = "Scheduled";  
+        public string Status { get; set; } = "Upcoming";
 
         // Navigation properties
-        [JsonIgnore]
-        public virtual ICollection<Team> Teams { get; set; } = new List<Team>();
-
-        [JsonIgnore]
-        public virtual ICollection<Round> Rounds { get; set; } = new List<Round>();
+        public ICollection<Team> Teams { get; set; } = new List<Team>();
+        public ICollection<Round> Rounds { get; set; } = new List<Round>();
     }
 }

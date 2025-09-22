@@ -1,79 +1,63 @@
-// src/components/RoundSelector.tsx
+// src/components/common/RoundSelector.tsx
 import React, { useEffect, useState } from "react";
-import { roundsService, RoundDto } from "../../services/apiService";
+import { roundService, RoundDto } from "../../services/apiService"; // Fixed import
 
 type Props = {
   tournamentId: number;
-  value: number | null;
-  onChange: (roundId: number | null) => void;
-  autoSeedIfEmpty?: boolean;
-  seedCount?: number;
+  selectedRoundId?: number;
+  onRoundSelect: (roundId: number) => void;
 };
 
-const RoundSelector: React.FC<Props> = ({
-  tournamentId,
-  value,
-  onChange,
-  autoSeedIfEmpty = true,
-  seedCount = 1,
+export const RoundSelector: React.FC<Props> = ({ 
+  tournamentId, 
+  selectedRoundId, 
+  onRoundSelect 
 }) => {
   const [rounds, setRounds] = useState<RoundDto[]>([]);
   const [loading, setLoading] = useState(true);
-  const [err, setErr] = useState<string | null>(null);
-
-  const loadRounds = async () => {
-    setLoading(true);
-    setErr(null);
-    try {
-      let list = await roundsService.getByTournament(tournamentId);
-
-      if (list.length === 0 && autoSeedIfEmpty) {
-        await roundsService.seed(tournamentId, seedCount);
-        list = await roundsService.getByTournament(tournamentId);
-      }
-
-      setRounds(list);
-      if (!value && list.length > 0) onChange(list[0].roundId);
-    } catch (e: any) {
-      setErr(e?.response?.data ?? e?.message ?? "Failed to load rounds");
-    } finally {
-      setLoading(false);
-    }
-  };
 
   useEffect(() => {
-    if (tournamentId) loadRounds();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    const fetchRounds = async () => {
+      try {
+        setLoading(true);
+        const data = await roundService.getRounds(tournamentId);
+        setRounds(data);
+      } catch (error) {
+        console.error('Error fetching rounds:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (tournamentId) {
+      fetchRounds();
+    }
   }, [tournamentId]);
 
-  if (loading) return <p>Loading rounds…</p>;
-  if (err) return <p style={{ color: "crimson" }}>{err}</p>;
-  if (rounds.length === 0) return <p>No rounds found for this tournament.</p>;
+  if (loading) {
+    return <div>Loading rounds...</div>;
+  }
 
   return (
-    <label className="flex items-center gap-2">
-      <span className="min-w-[80px]">Round</span>
+    <div className="round-selector">
+      <label htmlFor="round-select">Select Round:</label>
       <select
-        value={value ?? ""}
-        onChange={(e) => onChange(Number(e.target.value) || null)}
-        className="border rounded px-2 py-1"
+        id="round-select"
+        value={selectedRoundId || ''}
+        onChange={(e) => {
+          const roundId = parseInt(e.target.value);
+          if (!isNaN(roundId)) {
+            onRoundSelect(roundId);
+          }
+        }}
       >
-        {rounds.map((r) => (
-          <option key={r.roundId} value={r.roundId}>
-            Round {r.roundNumber} — {new Date(r.date).toLocaleDateString()}
+        <option value="">Select a round</option>
+        {rounds.map((round) => (
+          <option key={round.roundId} value={round.roundId}>
+            {round.name} - {new Date(round.date).toLocaleDateString()}
           </option>
         ))}
       </select>
-      <button
-        type="button"
-        className="border rounded px-2 py-1"
-        onClick={loadRounds}
-        title="Refresh rounds"
-      >
-        Refresh
-      </button>
-    </label>
+    </div>
   );
 };
-
-export default RoundSelector;

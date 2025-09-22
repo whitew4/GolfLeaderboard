@@ -1,26 +1,34 @@
-using System.Text.Json.Serialization;
+// Score.cs - Add missing TournamentId property
 using GolfTournamentData.Models;
+using System.ComponentModel.DataAnnotations;
 
-namespace GolfTournamentData.Models
+namespace GolfTournamentData
 {
     public class Score
     {
         public int ScoreId { get; set; }
-        public int TeamId { get; set; }
-        public int TournamentId { get; set; } // ← ADD THIS
-        public int RoundId { get; set; }
-        public int HoleNumber { get; set; }
-        public int Strokes { get; set; }
-        public int Par { get; set; }
-        
-        // Navigation properties
-        [JsonIgnore]
-        public virtual Team? Team { get; set; }
-        
-        [JsonIgnore]
-        public virtual Round? Round { get; set; }
 
-        [JsonIgnore] // ← Add this too
-        public virtual Tournament? Tournament { get; set; }
+        [Required]
+        public int TeamId { get; set; }
+
+        [Required]
+        public int RoundId { get; set; }
+
+        [Required]
+        public int TournamentId { get; set; }  // ADD THIS - matches your database
+
+        [Required]
+        public int HoleNumber { get; set; }
+
+        [Required]
+        public int Strokes { get; set; }
+
+        [Required]
+        public int Par { get; set; }
+
+        // Navigation properties (optional)
+        public Team? Team { get; set; }
+        public Round? Round { get; set; }
+        public Tournament? Tournament { get; set; }
     }
 }

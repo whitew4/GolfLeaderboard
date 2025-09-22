@@ -26,3 +26,12 @@ C:\GolfLeaderboard\GolfTournament\GolfTournamentData\obj\Debug\net6.0\refint\Gol
 C:\GolfLeaderboard\GolfTournament\GolfTournamentData\obj\Debug\net6.0\GolfTournamentData.pdb
 C:\GolfLeaderboard\GolfTournament\GolfTournamentData\obj\Debug\net6.0\GolfTournamentData.genruntimeconfig.cache
 C:\GolfLeaderboard\GolfTournament\GolfTournamentData\obj\Debug\net6.0\ref\GolfTournamentData.dll
+C:\Users\bwhite\Documents\GitHub\GolfLeaderboard\GolfTournamentData\obj\Debug\net6.0\GolfTournamentData.csproj.AssemblyReference.cache
+C:\Users\bwhite\Documents\GitHub\GolfLeaderboard\GolfTournamentData\obj\Debug\net6.0\GolfTournamentData.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\bwhite\Documents\GitHub\GolfLeaderboard\GolfTournamentData\obj\Debug\net6.0\GolfTournamentData.AssemblyInfoInputs.cache
+C:\Users\bwhite\Documents\GitHub\GolfLeaderboard\GolfTournamentData\obj\Debug\net6.0\GolfTournamentData.AssemblyInfo.cs
+C:\Users\bwhite\Documents\GitHub\GolfLeaderboard\GolfTournamentData\obj\Debug\net6.0\GolfTournamentData.csproj.CoreCompileInputs.cache
+C:\Users\bwhite\Documents\GitHub\GolfLeaderboard\GolfTournamentData\obj\Debug\net6.0\GolfTournamentData.sourcelink.json
+C:\Users\bwhite\Documents\GitHub\GolfLeaderboard\GolfTournamentData\obj\Debug\net6.0\GolfTournamentData.dll
+C:\Users\bwhite\Documents\GitHub\GolfLeaderboard\GolfTournamentData\obj\Debug\net6.0\refint\GolfTournamentData.dll
+C:\Users\bwhite\Documents\GitHub\GolfLeaderboard\GolfTournamentData\obj\Debug\net6.0\GolfTournamentData.pdb

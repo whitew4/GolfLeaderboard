@@ -1,7 +1,10 @@
+// GolfTournamentAPI/Controllers/ScoresController.cs
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using GolfTournamentData;
 using GolfTournamentData.Models;
+using GolfTournamentAPI.Services;
+using System.ComponentModel.DataAnnotations;
 
 namespace GolfTournamentAPI.Controllers
 {
@@ -10,224 +13,352 @@ namespace GolfTournamentAPI.Controllers
     public class ScoresController : ControllerBase
     {
         private readonly AppDbContext _context;
+        private readonly ISignalRService _signalRService;
+        private readonly ILeaderboardCalculationService _leaderboardService;
+        private readonly ILogger<ScoresController> _logger;
 
-        public ScoresController(AppDbContext context)
+        public ScoresController(
+            AppDbContext context,
+            ISignalRService signalRService,
+            ILeaderboardCalculationService leaderboardService,
+            ILogger<ScoresController> logger)
         {
             _context = context;
+            _signalRService = signalRService;
+            _leaderboardService = leaderboardService;
+            _logger = logger;
         }
 
+        /// <summary>
+        /// Get scores with optional filtering
+        /// </summary>
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Score>>> GetScores([FromQuery] int? teamId, [FromQuery] int? roundId)
+        public async Task<ActionResult<IEnumerable<ScoreDto>>> GetScores(
+            [FromQuery] int? teamId,
+            [FromQuery] int? roundId,
+            [FromQuery] int? tournamentId)
         {
-            var q = _context.Scores.AsNoTracking().AsQueryable();
-            if (teamId.HasValue) q = q.Where(s => s.TeamId == teamId.Value);
-            if (roundId.HasValue) q = q.Where(s => s.RoundId == roundId.Value);
+            try
+            {
+                var query = _context.Scores
+                    .Include(s => s.Team)
+                    .Include(s => s.Round)
+                    .AsNoTracking()
+                    .AsQueryable();
 
-            var list = await q
-                .OrderBy(s => s.RoundId)
-                .ThenBy(s => s.TeamId)
-                .ThenBy(s => s.HoleNumber)
-                .ToListAsync();
+                if (teamId.HasValue)
+                    query = query.Where(s => s.TeamId == teamId.Value);
 
-            return Ok(list);
+                if (roundId.HasValue)
+                    query = query.Where(s => s.RoundId == roundId.Value);
+
+                if (tournamentId.HasValue)
+                    query = query.Where(s => s.Round.TournamentId == tournamentId.Value);
+
+                var scores = await query
+                    .OrderBy(s => s.Round.RoundNumber)
+                    .ThenBy(s => s.HoleNumber)
+                    .Select(s => new ScoreDto
+                    {
+                        ScoreId = s.ScoreId,
+                        TeamId = s.TeamId,
+                        TeamName = s.Team.TeamName,
+                        RoundId = s.RoundId,
+                        RoundNumber = s.Round.RoundNumber,
+                        TournamentId = s.Round.TournamentId,
+                        HoleNumber = s.HoleNumber,
+                        Strokes = s.Strokes,
+                        Par = s.Par,
+                        Score = s.Strokes - s.Par
+                    })
+                    .ToListAsync();
+
+                return Ok(scores);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving scores");
+                return StatusCode(500, "Error retrieving scores");
+            }
         }
 
+        /// <summary>
+        /// Create or update a score with real-time broadcasting
+        /// </summary>
         [HttpPost]
-        public async Task<ActionResult<Score>> PostScore([FromBody] ScoreCreateDto dto)
+        public async Task<ActionResult<ScoreDto>> CreateScore([FromBody] CreateScoreRequest request)
         {
-            if (dto is null) return BadRequest("Body was empty.");
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
 
-            // --- Validate basics ---
-            if (dto.TournamentId <= 0) return BadRequest("TournamentId is required and must be > 0.");
-            if (dto.TeamId <= 0) return BadRequest("TeamId is required and must be > 0.");
-            if (dto.RoundNumber <= 0) return BadRequest("RoundNumber is required and must be > 0.");
-            if (dto.HoleNumber < 1 || dto.HoleNumber > 18) return BadRequest("HoleNumber must be between 1 and 18.");
-            if (dto.Strokes <= 0) return BadRequest("Strokes must be positive.");
-            if (dto.Par.HasValue && (dto.Par < 2 || dto.Par > 7)) return BadRequest("Par must be realistic (2–7).");
+            using var transaction = await _context.Database.BeginTransactionAsync();
 
-            // --- Ensure team exists and belongs to the tournament ---
-            var team = await _context.Teams
-                .AsNoTracking()
-                .FirstOrDefaultAsync(t => t.TeamId == dto.TeamId);
-            if (team is null) return BadRequest($"Team {dto.TeamId} does not exist.");
-            if (team.TournamentId != dto.TournamentId)
-                return BadRequest($"Team {dto.TeamId} belongs to Tournament {team.TournamentId}, not {dto.TournamentId}.");
-
-            // --- Find or CREATE the round for (TournamentId, RoundNumber) ---
-            var round = await _context.Rounds
-                .FirstOrDefaultAsync(r => r.TournamentId == dto.TournamentId && r.RoundNumber == dto.RoundNumber);
-
-            if (round is null)
+            try
             {
-                round = new Round
+                // Validate the request
+                var validationResult = await ValidateScoreRequestAsync(request);
+                if (!validationResult.IsValid)
+                    return BadRequest(validationResult.ErrorMessage);
+
+                // Get team and round info for real-time updates
+                var team = await _context.Teams
+                    .AsNoTracking()
+                    .FirstAsync(t => t.TeamId == request.TeamId);
+
+                var round = await _context.Rounds
+                    .AsNoTracking()
+                    .FirstAsync(r => r.RoundId == request.RoundId);
+
+                // Store previous leaderboard positions for comparison
+                var previousLeaderboard = await _leaderboardService.GetTournamentLeaderboardAsync(round.TournamentId);
+                var previousPosition = previousLeaderboard.FirstOrDefault(e => e.TeamId == request.TeamId)?.Position ?? 0;
+
+                // Create or update the score
+                var score = await UpsertScoreAsync(request);
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                // Broadcast score update
+                await _signalRService.BroadcastScoreUpdateAsync(
+                    round.TournamentId,
+                    team.TeamName,
+                    request.HoleNumber,
+                    request.Strokes);
+
+                // Check for position changes and broadcast
+                var newLeaderboard = await _leaderboardService.GetTournamentLeaderboardAsync(round.TournamentId);
+                var newPosition = newLeaderboard.FirstOrDefault(e => e.TeamId == request.TeamId)?.Position ?? 0;
+
+                if (previousPosition > 0 && newPosition != previousPosition)
                 {
-                    TournamentId = dto.TournamentId,
-                    RoundNumber = dto.RoundNumber
+                    await _signalRService.BroadcastPositionChangeAsync(
+                        round.TournamentId,
+                        team.TeamName,
+                        previousPosition,
+                        newPosition);
+                }
+
+                var scoreDto = new ScoreDto
+                {
+                    ScoreId = score.ScoreId,
+                    TeamId = score.TeamId,
+                    TeamName = team.TeamName,
+                    RoundId = score.RoundId,
+                    RoundNumber = round.RoundNumber,
+                    TournamentId = round.TournamentId,
+                    HoleNumber = score.HoleNumber,
+                    Strokes = score.Strokes,
+                    Par = score.Par,
+                    Score = score.Strokes - score.Par
                 };
-                _context.Rounds.Add(round);
-                await _context.SaveChangesAsync(); // materialize RoundId
+
+                return CreatedAtAction(nameof(GetScore), new { id = score.ScoreId }, scoreDto);
             }
-
-            // (Optional) If legacy roundId was provided and doesn't match, we ignore it and use the correct RoundId.
-            var targetRoundId = round.RoundId;
-
-            // --- Determine Par (map legacy "Score" to Par if used) ---
-            var par = dto.Par ?? dto.Score ?? 4;
-            if (par <= 0) par = 4;
-
-            // --- Upsert Score for (Team, Round, Hole) ---
-            var existing = await _context.Scores.FirstOrDefaultAsync(s =>
-                s.TeamId == dto.TeamId &&
-                s.RoundId == targetRoundId &&
-                s.HoleNumber == dto.HoleNumber);
-
-            if (existing is null)
+            catch (Exception ex)
             {
-                var score = new Score
+                await transaction.RollbackAsync();
+                _logger.LogError(ex, "Error creating score for team {TeamId}, round {RoundId}, hole {HoleNumber}",
+                    request.TeamId, request.RoundId, request.HoleNumber);
+                return StatusCode(500, "Error creating score");
+            }
+        }
+
+        /// <summary>
+        /// Get a specific score by ID
+        /// </summary>
+        [HttpGet("{id:int}")]
+        public async Task<ActionResult<ScoreDto>> GetScore(int id)
+        {
+            try
+            {
+                var score = await _context.Scores
+                    .Include(s => s.Team)
+                    .Include(s => s.Round)
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(s => s.ScoreId == id);
+
+                if (score == null)
+                    return NotFound($"Score with ID {id} not found");
+
+                var scoreDto = new ScoreDto
                 {
-                    TournamentId = round.TournamentId, 
-                    TeamId = dto.TeamId,
-                    RoundId = targetRoundId,
-                    HoleNumber = dto.HoleNumber,
-                    Strokes = dto.Strokes,
-                    Par = par
+                    ScoreId = score.ScoreId,
+                    TeamId = score.TeamId,
+                    TeamName = score.Team.TeamName,
+                    RoundId = score.RoundId,
+                    RoundNumber = score.Round.RoundNumber,
+                    TournamentId = score.Round.TournamentId,
+                    HoleNumber = score.HoleNumber,
+                    Strokes = score.Strokes,
+                    Par = score.Par,
+                    Score = score.Strokes - score.Par
                 };
 
-                _context.Scores.Add(score);
+                return Ok(scoreDto);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving score {ScoreId}", id);
+                return StatusCode(500, "Error retrieving score");
+            }
+        }
 
-                try
-                {
-                    await _context.SaveChangesAsync();
-                    return CreatedAtAction(nameof(GetScore), new { id = score.ScoreId }, score);
-                }
-                catch (DbUpdateException)
-                {
-                   
-                    var concurrent = await _context.Scores.FirstOrDefaultAsync(s =>
-                        s.TeamId == dto.TeamId &&
-                        s.RoundId == targetRoundId &&
-                        s.HoleNumber == dto.HoleNumber);
+        /// <summary>
+        /// Get scores for a team in a specific round
+        /// </summary>
+        [HttpGet("team/{teamId:int}/round/{roundId:int}")]
+        public async Task<ActionResult<List<ScoreDto>>> GetTeamRoundScores(int teamId, int roundId)
+        {
+            try
+            {
+                var scores = await _context.Scores
+                    .Include(s => s.Team)
+                    .Include(s => s.Round)
+                    .Where(s => s.TeamId == teamId && s.RoundId == roundId)
+                    .OrderBy(s => s.HoleNumber)
+                    .AsNoTracking()
+                    .Select(s => new ScoreDto
+                    {
+                        ScoreId = s.ScoreId,
+                        TeamId = s.TeamId,
+                        TeamName = s.Team.TeamName,
+                        RoundId = s.RoundId,
+                        RoundNumber = s.Round.RoundNumber,
+                        TournamentId = s.Round.TournamentId,
+                        HoleNumber = s.HoleNumber,
+                        Strokes = s.Strokes,
+                        Par = s.Par,
+                        Score = s.Strokes - s.Par
+                    })
+                    .ToListAsync();
 
-                    if (concurrent is null) throw; 
+                return Ok(scores);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving scores for team {TeamId}, round {RoundId}", teamId, roundId);
+                return StatusCode(500, "Error retrieving team round scores");
+            }
+        }
 
-                    concurrent.Strokes = dto.Strokes;
-                    concurrent.Par = par;
-                    await _context.SaveChangesAsync();
-                    return Ok(concurrent);
-                }
+        private async Task<ValidationResult> ValidateScoreRequestAsync(CreateScoreRequest request)
+        {
+            // Validate hole number
+            if (request.HoleNumber < 1 || request.HoleNumber > 18)
+                return ValidationResult.Invalid("Hole number must be between 1 and 18");
+
+            // Validate strokes
+            if (request.Strokes <= 0 || request.Strokes > 15)
+                return ValidationResult.Invalid("Strokes must be between 1 and 15");
+
+            // Validate par
+            if (request.Par < 2 || request.Par > 7)
+                return ValidationResult.Invalid("Par must be between 2 and 7");
+
+            // Validate team exists
+            var teamExists = await _context.Teams.AnyAsync(t => t.TeamId == request.TeamId);
+            if (!teamExists)
+                return ValidationResult.Invalid($"Team {request.TeamId} does not exist");
+
+            // Validate round exists
+            var roundExists = await _context.Rounds.AnyAsync(r => r.RoundId == request.RoundId);
+            if (!roundExists)
+                return ValidationResult.Invalid($"Round {request.RoundId} does not exist");
+
+            // Validate team belongs to same tournament as round
+            var teamTournamentId = await _context.Teams
+                .Where(t => t.TeamId == request.TeamId)
+                .Select(t => t.TournamentId)
+                .FirstOrDefaultAsync();
+
+            var roundTournamentId = await _context.Rounds
+                .Where(r => r.RoundId == request.RoundId)
+                .Select(r => r.TournamentId)
+                .FirstOrDefaultAsync();
+
+            if (teamTournamentId != roundTournamentId)
+                return ValidationResult.Invalid("Team and round must belong to the same tournament");
+
+            return ValidationResult.Valid();
+        }
+
+        private async Task<Score> UpsertScoreAsync(CreateScoreRequest request)
+        {
+            var existingScore = await _context.Scores
+                .FirstOrDefaultAsync(s =>
+                    s.TeamId == request.TeamId &&
+                    s.RoundId == request.RoundId &&
+                    s.HoleNumber == request.HoleNumber);
+
+            if (existingScore != null)
+            {
+                // Update existing score
+                existingScore.Strokes = request.Strokes;
+                existingScore.Par = request.Par;
+                return existingScore;
             }
             else
             {
-                // Update existing
-                existing.Strokes = dto.Strokes;
-            
-                if (dto.Par.HasValue || dto.Score.HasValue)
-                    existing.Par = par;
+                // Create new score
+                var newScore = new Score
+                {
+                    TeamId = request.TeamId,
+                    RoundId = request.RoundId,
+                    HoleNumber = request.HoleNumber,
+                    Strokes = request.Strokes,
+                    Par = request.Par
+                };
 
-                // gotta keep these consistent
-                existing.TournamentId = round.TournamentId;
-
-                await _context.SaveChangesAsync();
-                return Ok(existing);
+                _context.Scores.Add(newScore);
+                return newScore;
             }
-        }
-
-        [HttpGet("{id:int}")]
-        public async Task<ActionResult<Score>> GetScore(int id)
-        {
-            var score = await _context.Scores.AsNoTracking().FirstOrDefaultAsync(s => s.ScoreId == id);
-            if (score == null) return NotFound();
-            return Ok(score);
-        }
-
-        // PUT: api/scores/123
-        [HttpPut("{id:int}")]
-        public async Task<IActionResult> PutScore(int id, [FromBody] ScoreUpdateDto dto)
-        {
-            var score = await _context.Scores.FirstOrDefaultAsync(s => s.ScoreId == id);
-            if (score == null) return NotFound();
-
-            if (dto.HoleNumber.HasValue)
-            {
-                if (dto.HoleNumber < 1 || dto.HoleNumber > 18)
-                    return BadRequest("HoleNumber must be 1-18.");
-                score.HoleNumber = dto.HoleNumber.Value;
-            }
-
-            if (dto.Strokes.HasValue)
-            {
-                if (dto.Strokes <= 0) return BadRequest("Strokes must be positive.");
-                score.Strokes = dto.Strokes.Value;
-            }
-
-            if (dto.Par.HasValue)
-            {
-                if (dto.Par < 2 || dto.Par > 7) return BadRequest("Par must be realistic (2–7).");
-                score.Par = dto.Par.Value;
-            }
-
-            // Allow moving to a different round by RoundId (existing behavior).
-            if (dto.RoundId.HasValue && dto.RoundId.Value != score.RoundId)
-            {
-                var newRound = await _context.Rounds.AsNoTracking().FirstOrDefaultAsync(r => r.RoundId == dto.RoundId.Value);
-                if (newRound == null) return BadRequest($"Round {dto.RoundId.Value} does not exist.");
-                score.RoundId = dto.RoundId.Value;
-                score.TournamentId = newRound.TournamentId; 
-            }
-
-            if (dto.TeamId.HasValue && dto.TeamId.Value != score.TeamId)
-            {
-                var team = await _context.Teams.AsNoTracking().FirstOrDefaultAsync(t => t.TeamId == dto.TeamId.Value);
-                if (team == null) return BadRequest($"Team {dto.TeamId.Value} does not exist.");
-
-                // Ensure team and round belong to same tournament
-                var round = await _context.Rounds.AsNoTracking().FirstAsync(r => r.RoundId == score.RoundId);
-                if (team.TournamentId != round.TournamentId)
-                    return BadRequest($"Team {dto.TeamId.Value} (Tournament {team.TournamentId}) does not match Round {score.RoundId}'s Tournament {round.TournamentId}.");
-
-                score.TeamId = dto.TeamId.Value;
-            }
-
-            await _context.SaveChangesAsync();
-            return NoContent();
-        }
-
-        
-        [HttpDelete("{id:int}")]
-        public async Task<IActionResult> DeleteScore(int id)
-        {
-            var score = await _context.Scores.FindAsync(id);
-            if (score == null) return NotFound();
-
-            _context.Scores.Remove(score);
-            await _context.SaveChangesAsync();
-            return NoContent();
         }
     }
 
-    // --- DTOs ---
-
-    public class ScoreCreateDto
+    // DTOs
+    public class CreateScoreRequest
     {
-        // Required for Step 2 flow:
-        public int TournamentId { get; set; }
+        [Required]
+        [Range(1, int.MaxValue, ErrorMessage = "TeamId must be greater than 0")]
         public int TeamId { get; set; }
-        public int RoundNumber { get; set; }  
+
+        [Required]
+        [Range(1, int.MaxValue, ErrorMessage = "RoundId must be greater than 0")]
+        public int RoundId { get; set; }
+
+        [Required]
+        [Range(1, 18, ErrorMessage = "HoleNumber must be between 1 and 18")]
         public int HoleNumber { get; set; }
+
+        [Required]
+        [Range(1, 15, ErrorMessage = "Strokes must be between 1 and 15")]
         public int Strokes { get; set; }
 
-        // Optional / legacy compatibility:
-        public int? RoundId { get; set; }      
-        public int? Par { get; set; }          
-        public int? Score { get; set; }        
+        [Required]
+        [Range(2, 7, ErrorMessage = "Par must be between 2 and 7")]
+        public int Par { get; set; }
     }
 
-    public class ScoreUpdateDto
+    public class ScoreDto
     {
-        public int? TeamId { get; set; }
-        public int? RoundId { get; set; }      
-        public int? HoleNumber { get; set; }
-        public int? Strokes { get; set; }
-        public int? Par { get; set; }
+        public int ScoreId { get; set; }
+        public int TeamId { get; set; }
+        public string TeamName { get; set; } = string.Empty;
+        public int RoundId { get; set; }
+        public int RoundNumber { get; set; }
+        public int TournamentId { get; set; }
+        public int HoleNumber { get; set; }
+        public int Strokes { get; set; }
+        public int Par { get; set; }
+        public int Score { get; set; } // Relative to par
+    }
+
+    public class ValidationResult
+    {
+        public bool IsValid { get; set; }
+        public string ErrorMessage { get; set; } = string.Empty;
+
+        public static ValidationResult Valid() => new() { IsValid = true };
+        public static ValidationResult Invalid(string message) => new() { IsValid = false, ErrorMessage = message };
     }
 }

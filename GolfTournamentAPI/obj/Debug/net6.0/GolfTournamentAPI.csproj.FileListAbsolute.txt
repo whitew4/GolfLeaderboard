@@ -191,3 +191,6 @@ C:\GolfLeaderboard\GolfTournament\GolfTournamentAPI\obj\Debug\net6.0\refint\Golf
 C:\GolfLeaderboard\GolfTournament\GolfTournamentAPI\obj\Debug\net6.0\GolfTournamentAPI.pdb
 C:\GolfLeaderboard\GolfTournament\GolfTournamentAPI\obj\Debug\net6.0\GolfTournamentAPI.genruntimeconfig.cache
 C:\GolfLeaderboard\GolfTournament\GolfTournamentAPI\obj\Debug\net6.0\ref\GolfTournamentAPI.dll
+C:\Users\bwhite\Documents\GitHub\GolfLeaderboard\GolfTournamentAPI\obj\Debug\net6.0\GolfTournamentAPI.dll
+C:\Users\bwhite\Documents\GitHub\GolfLeaderboard\GolfTournamentAPI\obj\Debug\net6.0\refint\GolfTournamentAPI.dll
+C:\Users\bwhite\Documents\GitHub\GolfLeaderboard\GolfTournamentAPI\obj\Debug\net6.0\GolfTournamentAPI.pdb

@@ -17,10 +17,10 @@ namespace GolfTournamentData.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "6.0.30")
+                .HasAnnotation("ProductVersion", "8.0.11")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
-            SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder, 1L, 1);
+            SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
             modelBuilder.Entity("GolfTournamentData.Models.Round", b =>
                 {
@@ -28,7 +28,7 @@ namespace GolfTournamentData.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("RoundId"), 1L, 1);
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("RoundId"));
 
                     b.Property<DateTime>("Date")
                         .HasColumnType("datetime2");
@@ -39,22 +39,63 @@ namespace GolfTournamentData.Migrations
                     b.Property<int>("TournamentId")
                         .HasColumnType("int");
 
+                    b.Property<int>("TournamentId1")
+                        .HasColumnType("int");
+
                     b.HasKey("RoundId");
 
-                    b.HasIndex("TournamentId", "RoundNumber")
-                        .IsUnique()
-                        .HasDatabaseName("UX_Rounds_Tournament_RoundNumber");
+                    b.HasIndex("TournamentId");
+
+                    b.HasIndex("TournamentId1");
 
                     b.ToTable("Rounds");
                 });
 
-            modelBuilder.Entity("GolfTournamentData.Models.Score", b =>
+            modelBuilder.Entity("GolfTournamentData.Models.Team", b =>
+                {
+                    b.Property<int>("TeamId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("TeamId"));
+
+                    b.Property<string>("Player1Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Player2Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("TeamName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<int>("TournamentId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("TournamentId1")
+                        .HasColumnType("int");
+
+                    b.HasKey("TeamId");
+
+                    b.HasIndex("TournamentId");
+
+                    b.HasIndex("TournamentId1");
+
+                    b.ToTable("Teams");
+                });
+
+            modelBuilder.Entity("GolfTournamentData.Score", b =>
                 {
                     b.Property<int>("ScoreId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ScoreId"), 1L, 1);
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ScoreId"));
 
                     b.Property<int>("HoleNumber")
                         .HasColumnType("int");
@@ -65,73 +106,55 @@ namespace GolfTournamentData.Migrations
                     b.Property<int>("RoundId")
                         .HasColumnType("int");
 
+                    b.Property<int?>("RoundId1")
+                        .HasColumnType("int");
+
                     b.Property<int>("Strokes")
                         .HasColumnType("int");
 
                     b.Property<int>("TeamId")
                         .HasColumnType("int");
 
+                    b.Property<int?>("TeamId1")
+                        .HasColumnType("int");
+
                     b.Property<int>("TournamentId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("TournamentId1")
                         .HasColumnType("int");
 
                     b.HasKey("ScoreId");
 
                     b.HasIndex("RoundId");
 
-                    b.HasIndex("TeamId")
-                        .HasDatabaseName("IX_Scores_TeamId");
+                    b.HasIndex("RoundId1");
 
-                    b.HasIndex("TournamentId")
-                        .HasDatabaseName("IX_Scores_TournamentId");
+                    b.HasIndex("TeamId");
 
-                    b.HasIndex("TeamId", "RoundId", "HoleNumber")
-                        .IsUnique()
-                        .HasDatabaseName("UX_Scores_Team_Round_Hole");
+                    b.HasIndex("TeamId1");
+
+                    b.HasIndex("TournamentId");
+
+                    b.HasIndex("TournamentId1");
 
                     b.ToTable("Scores");
                 });
 
-            modelBuilder.Entity("GolfTournamentData.Models.Team", b =>
-                {
-                    b.Property<int>("TeamId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("TeamId"), 1L, 1);
-
-                    b.Property<string>("Player1Name")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Player2Name")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("TeamName")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("TournamentId")
-                        .HasColumnType("int");
-
-                    b.HasKey("TeamId");
-
-                    b.HasIndex("TournamentId")
-                        .HasDatabaseName("IX_Teams_TournamentId");
-
-                    b.ToTable("Teams");
-                });
-
-            modelBuilder.Entity("GolfTournamentData.Models.Tournament", b =>
+            modelBuilder.Entity("GolfTournamentData.Tournament", b =>
                 {
                     b.Property<int>("TournamentId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("TournamentId"), 1L, 1);
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("TournamentId"));
 
                     b.Property<DateTime>("EndDate")
                         .HasColumnType("datetime2");
+
+                    b.Property<string>("Location")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -143,7 +166,9 @@ namespace GolfTournamentData.Migrations
 
                     b.Property<string>("Status")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("nvarchar(max)")
+                        .HasDefaultValue("Upcoming");
 
                     b.HasKey("TournamentId");
 
@@ -152,49 +177,73 @@ namespace GolfTournamentData.Migrations
 
             modelBuilder.Entity("GolfTournamentData.Models.Round", b =>
                 {
-                    b.HasOne("GolfTournamentData.Models.Tournament", "Tournament")
+                    b.HasOne("GolfTournamentData.Tournament", null)
                         .WithMany("Rounds")
                         .HasForeignKey("TournamentId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Tournament");
-                });
-
-            modelBuilder.Entity("GolfTournamentData.Models.Score", b =>
-                {
-                    b.HasOne("GolfTournamentData.Models.Round", "Round")
-                        .WithMany("Scores")
-                        .HasForeignKey("RoundId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
-
-                    b.HasOne("GolfTournamentData.Models.Team", "Team")
-                        .WithMany("Scores")
-                        .HasForeignKey("TeamId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
-
-                    b.HasOne("GolfTournamentData.Models.Tournament", "Tournament")
+                    b.HasOne("GolfTournamentData.Tournament", "Tournament")
                         .WithMany()
-                        .HasForeignKey("TournamentId")
-                        .OnDelete(DeleteBehavior.NoAction)
+                        .HasForeignKey("TournamentId1")
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("Round");
-
-                    b.Navigation("Team");
 
                     b.Navigation("Tournament");
                 });
 
             modelBuilder.Entity("GolfTournamentData.Models.Team", b =>
                 {
-                    b.HasOne("GolfTournamentData.Models.Tournament", "Tournament")
+                    b.HasOne("GolfTournamentData.Tournament", null)
                         .WithMany("Teams")
                         .HasForeignKey("TournamentId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.HasOne("GolfTournamentData.Tournament", "Tournament")
+                        .WithMany()
+                        .HasForeignKey("TournamentId1")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Tournament");
+                });
+
+            modelBuilder.Entity("GolfTournamentData.Score", b =>
+                {
+                    b.HasOne("GolfTournamentData.Models.Round", null)
+                        .WithMany()
+                        .HasForeignKey("RoundId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("GolfTournamentData.Models.Round", "Round")
+                        .WithMany("Scores")
+                        .HasForeignKey("RoundId1");
+
+                    b.HasOne("GolfTournamentData.Models.Team", null)
+                        .WithMany()
+                        .HasForeignKey("TeamId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("GolfTournamentData.Models.Team", "Team")
+                        .WithMany("Scores")
+                        .HasForeignKey("TeamId1");
+
+                    b.HasOne("GolfTournamentData.Tournament", null)
+                        .WithMany()
+                        .HasForeignKey("TournamentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("GolfTournamentData.Tournament", "Tournament")
+                        .WithMany()
+                        .HasForeignKey("TournamentId1");
+
+                    b.Navigation("Round");
+
+                    b.Navigation("Team");
 
                     b.Navigation("Tournament");
                 });
@@ -209,7 +258,7 @@ namespace GolfTournamentData.Migrations
                     b.Navigation("Scores");
                 });
 
-            modelBuilder.Entity("GolfTournamentData.Models.Tournament", b =>
+            modelBuilder.Entity("GolfTournamentData.Tournament", b =>
                 {
                     b.Navigation("Rounds");
 

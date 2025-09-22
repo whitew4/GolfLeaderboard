@@ -1,41 +1,46 @@
-import React, { useState } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import Leaderboard from './components/leaderboard/Leaderboard';
-import MobileNavigation from './components/common/MobileNavigation';
-import Login from './components/common/Login';
-import TeamSelection from './components/player/TeamSelection';
-import AdminDashboard from './components/admin/AdminDashboard';
-import TournamentManager from './components/admin/TournamentManager';
-import TeamManager from './components/admin/TeamManager';
-import { TournamentProvider } from './contexts/TournamentContext';
-import PlayerScoreEntryWrapper from './components/player/PlayerScoreEntryWrapper';
-import TournamentSelector from './components/common/TournamentSelector';
+import React, { useState } from "react";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom";
+import Leaderboard from "./components/leaderboard/Leaderboard";
+import MobileNavigation from "./components/common/MobileNavigation";
+import Login from "./components/common/Login";
+import TeamSelection from "./components/player/TeamSelection";
+import AdminDashboard from "./components/admin/AdminDashboard";
+import TournamentManager from "./components/admin/TournamentManager";
+import TeamManager from "./components/admin/TeamManager";
+import { TournamentProvider } from "./contexts/TournamentContext";
+import PlayerScoreEntryWrapper from "./components/player/PlayerScoreEntryWrapper";
+import TournamentSelector from "./components/common/TournamentSelector";
 
-import RequireAdmin from './components/routing/RequireAdmin';
-import { isAdmin } from './utils/auth';
-import './App.css';
+import RequireAdmin from "./components/routing/RequireAdmin";
+import { isAdmin } from "./utils/auth";
+import "./App.css";
 
 function App() {
   // session auth only (no auto-login from localStorage on mount)
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [username, setUsername] = useState('');
+  const [username, setUsername] = useState("");
 
   const handleLogin = (token: string, user: string) => {
     // persist for API use
-    localStorage.setItem('authToken', token);
-    localStorage.setItem('username', user);
-    localStorage.setItem('userRole', user === 'admin' ? 'admin' : 'player');
+    localStorage.setItem("authToken", token);
+    localStorage.setItem("username", user);
+    localStorage.setItem("userRole", user === "admin" ? "admin" : "player");
 
     setIsAuthenticated(true);
     setUsername(user);
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('authToken');
-    localStorage.removeItem('username');
-    localStorage.removeItem('userRole');
+    localStorage.removeItem("authToken");
+    localStorage.removeItem("username");
+    localStorage.removeItem("userRole");
     setIsAuthenticated(false);
-    setUsername('');
+    setUsername("");
   };
 
   // tiny guard for non-admin pages
@@ -65,9 +70,15 @@ function App() {
               <Route
                 path="/login"
                 element={
-                  isAuthenticated
-                    ? (isAdmin() ? <Navigate to="/admin" replace /> : <Navigate to="/" replace />)
-                    : <Login onLogin={handleLogin} />
+                  isAuthenticated ? (
+                    isAdmin() ? (
+                      <Navigate to="/admin" replace />
+                    ) : (
+                      <Navigate to="/" replace />
+                    )
+                  ) : (
+                    <Login onLogin={handleLogin} />
+                  )
                 }
               />
 
@@ -102,7 +113,17 @@ function App() {
                 path="/"
                 element={
                   <RequireAuth>
-                    {isAdmin() ? <Navigate to="/admin" replace /> : <TournamentSelector />}
+                    {isAdmin() ? (
+                      <Navigate to="/admin" replace />
+                    ) : (
+                      <TournamentSelector
+                        onTournamentSelect={(tournamentId) => {
+                          // Handle tournament selection - navigate to appropriate page
+                          // You might want to navigate to leaderboard or admin page
+                          window.location.href = `/tournament/${tournamentId}/teams`;
+                        }}
+                      />
+                    )}
                   </RequireAuth>
                 }
               />
@@ -110,7 +131,13 @@ function App() {
                 path="/tournaments"
                 element={
                   <RequireAuth>
-                    <TournamentSelector />
+                    <TournamentSelector
+                      onTournamentSelect={(tournamentId) => {
+                        // Handle tournament selection - navigate to appropriate page
+                        // You might want to navigate to leaderboard or admin page
+                        window.location.href = `/tournament/${tournamentId}/teams`;
+                      }}
+                    />
                   </RequireAuth>
                 }
               />
@@ -143,16 +170,27 @@ function App() {
               <Route path="/old-leaderboard" element={<Leaderboard />} />
               <Route
                 path="/tournament/:tournamentId/score-entry"
-                element={<Navigate to="/tournament/:tournamentId/select-team" replace />}
+                element={
+                  <Navigate
+                    to="/tournament/:tournamentId/select-team"
+                    replace
+                  />
+                }
               />
 
               {/* Fallback: if authed send by role, else go to login */}
               <Route
                 path="*"
                 element={
-                  isAuthenticated
-                    ? (isAdmin() ? <Navigate to="/admin" replace /> : <Navigate to="/" replace />)
-                    : <Navigate to="/login" replace />
+                  isAuthenticated ? (
+                    isAdmin() ? (
+                      <Navigate to="/admin" replace />
+                    ) : (
+                      <Navigate to="/" replace />
+                    )
+                  ) : (
+                    <Navigate to="/login" replace />
+                  )
                 }
               />
             </Routes>

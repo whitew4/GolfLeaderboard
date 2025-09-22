@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\GolfLeaderboard\\GolfTournament\\GolfTournament.IntegrationTests\\GolfTournament.IntegrationTests.csproj": {}
+    "C:\\Users\\bwhite\\Documents\\GitHub\\GolfLeaderboard\\GolfTournament.IntegrationTests\\GolfTournament.IntegrationTests.csproj": {}
   },
   "projects": {
-    "C:\\GolfLeaderboard\\GolfTournament\\GolfTournament.IntegrationTests\\GolfTournament.IntegrationTests.csproj": {
+    "C:\\Users\\bwhite\\Documents\\GitHub\\GolfLeaderboard\\GolfTournament.IntegrationTests\\GolfTournament.IntegrationTests.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\GolfLeaderboard\\GolfTournament\\GolfTournament.IntegrationTests\\GolfTournament.IntegrationTests.csproj",
+        "projectUniqueName": "C:\\Users\\bwhite\\Documents\\GitHub\\GolfLeaderboard\\GolfTournament.IntegrationTests\\GolfTournament.IntegrationTests.csproj",
         "projectName": "GolfTournament.IntegrationTests",
-        "projectPath": "C:\\GolfLeaderboard\\GolfTournament\\GolfTournament.IntegrationTests\\GolfTournament.IntegrationTests.csproj",
+        "projectPath": "C:\\Users\\bwhite\\Documents\\GitHub\\GolfLeaderboard\\GolfTournament.IntegrationTests\\GolfTournament.IntegrationTests.csproj",
         "packagesPath": "C:\\Users\\bwhite\\.nuget\\packages\\",
-        "outputPath": "C:\\GolfLeaderboard\\GolfTournament\\GolfTournament.IntegrationTests\\obj\\",
+        "outputPath": "C:\\Users\\bwhite\\Documents\\GitHub\\GolfLeaderboard\\GolfTournament.IntegrationTests\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\DevExpress 21.2\\Components\\Offline Packages",
@@ -25,7 +25,7 @@
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
         "originalTargetFrameworks": [
-          "net6.0"
+          "net8.0"
         ],
         "sources": {
           "C:\\Program Files (x86)\\DevExpress 21.2\\Components\\System\\Components\\Packages": {},
@@ -34,11 +34,11 @@
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
-          "net6.0": {
-            "targetAlias": "net6.0",
+          "net8.0": {
+            "targetAlias": "net8.0",
             "projectReferences": {
-              "C:\\GolfLeaderboard\\GolfTournament\\GolfTournamentAPI\\GolfTournamentAPI.csproj": {
-                "projectPath": "C:\\GolfLeaderboard\\GolfTournament\\GolfTournamentAPI\\GolfTournamentAPI.csproj"
+              "C:\\Users\\bwhite\\Documents\\GitHub\\GolfLeaderboard\\GolfTournamentAPI\\GolfTournamentAPI.csproj": {
+                "projectPath": "C:\\Users\\bwhite\\Documents\\GitHub\\GolfLeaderboard\\GolfTournamentAPI\\GolfTournamentAPI.csproj"
               }
             }
           }
@@ -47,47 +47,53 @@
           "warnAsError": [
             "NU1605"
           ]
-        }
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "direct"
+        },
+        "SdkAnalysisLevel": "9.0.300"
       },
       "frameworks": {
-        "net6.0": {
-          "targetAlias": "net6.0",
+        "net8.0": {
+          "targetAlias": "net8.0",
           "dependencies": {
             "Microsoft.AspNetCore.Mvc.Testing": {
               "target": "Package",
-              "version": "[6.0.0, )"
+              "version": "[8.0.11, )"
             },
             "Microsoft.EntityFrameworkCore.InMemory": {
               "target": "Package",
-              "version": "[6.0.0, )"
+              "version": "[8.0.11, )"
             },
             "Microsoft.Extensions.DependencyInjection": {
               "target": "Package",
-              "version": "[6.0.1, )"
+              "version": "[8.0.1, )"
             },
             "Microsoft.Extensions.Hosting": {
               "target": "Package",
-              "version": "[6.0.0, )"
+              "version": "[8.0.1, )"
             },
             "Microsoft.NET.Test.Sdk": {
               "target": "Package",
-              "version": "[17.1.0, )"
+              "version": "[17.8.0, )"
             },
             "coverlet.collector": {
               "include": "Runtime, Build, Native, ContentFiles, Analyzers, BuildTransitive",
               "suppressParent": "All",
               "target": "Package",
-              "version": "[3.1.2, )"
+              "version": "[6.0.0, )"
             },
             "xunit": {
               "target": "Package",
-              "version": "[2.4.1, )"
+              "version": "[2.6.1, )"
             },
             "xunit.runner.visualstudio": {
               "include": "Runtime, Build, Native, ContentFiles, Analyzers, BuildTransitive",
               "suppressParent": "All",
               "target": "Package",
-              "version": "[2.4.3, )"
+              "version": "[2.5.3, )"
             }
           },
           "imports": [
@@ -106,18 +112,18 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\7.0.102\\RuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.305/PortableRuntimeIdentifierGraph.json"
         }
       }
     },
-    "C:\\GolfLeaderboard\\GolfTournament\\GolfTournamentAPI\\GolfTournamentAPI.csproj": {
+    "C:\\Users\\bwhite\\Documents\\GitHub\\GolfLeaderboard\\GolfTournamentAPI\\GolfTournamentAPI.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\GolfLeaderboard\\GolfTournament\\GolfTournamentAPI\\GolfTournamentAPI.csproj",
+        "projectUniqueName": "C:\\Users\\bwhite\\Documents\\GitHub\\GolfLeaderboard\\GolfTournamentAPI\\GolfTournamentAPI.csproj",
         "projectName": "GolfTournamentAPI",
-        "projectPath": "C:\\GolfLeaderboard\\GolfTournament\\GolfTournamentAPI\\GolfTournamentAPI.csproj",
+        "projectPath": "C:\\Users\\bwhite\\Documents\\GitHub\\GolfLeaderboard\\GolfTournamentAPI\\GolfTournamentAPI.csproj",
         "packagesPath": "C:\\Users\\bwhite\\.nuget\\packages\\",
-        "outputPath": "C:\\GolfLeaderboard\\GolfTournament\\GolfTournamentAPI\\obj\\",
+        "outputPath": "C:\\Users\\bwhite\\Documents\\GitHub\\GolfLeaderboard\\GolfTournamentAPI\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\DevExpress 21.2\\Components\\Offline Packages",
@@ -131,7 +137,7 @@
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
         "originalTargetFrameworks": [
-          "net6.0"
+          "net8.0"
         ],
         "sources": {
           "C:\\Program Files (x86)\\DevExpress 21.2\\Components\\System\\Components\\Packages": {},
@@ -140,11 +146,11 @@
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
-          "net6.0": {
-            "targetAlias": "net6.0",
+          "net8.0": {
+            "targetAlias": "net8.0",
             "projectReferences": {
-              "C:\\GolfLeaderboard\\GolfTournament\\GolfTournamentData\\GolfTournamentData.csproj": {
-                "projectPath": "C:\\GolfLeaderboard\\GolfTournament\\GolfTournamentData\\GolfTournamentData.csproj"
+              "C:\\Users\\bwhite\\Documents\\GitHub\\GolfLeaderboard\\GolfTournamentData\\GolfTournamentData.csproj": {
+                "projectPath": "C:\\Users\\bwhite\\Documents\\GitHub\\GolfLeaderboard\\GolfTournamentData\\GolfTournamentData.csproj"
               }
             }
           }
@@ -153,27 +159,33 @@
           "warnAsError": [
             "NU1605"
           ]
-        }
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "direct"
+        },
+        "SdkAnalysisLevel": "9.0.300"
       },
       "frameworks": {
-        "net6.0": {
-          "targetAlias": "net6.0",
+        "net8.0": {
+          "targetAlias": "net8.0",
           "dependencies": {
             "Microsoft.AspNetCore.Authentication.JwtBearer": {
               "target": "Package",
-              "version": "[6.0.0, )"
+              "version": "[8.0.11, )"
             },
             "Microsoft.EntityFrameworkCore.Design": {
               "target": "Package",
-              "version": "[6.0.0, )"
+              "version": "[8.0.11, )"
             },
             "Microsoft.EntityFrameworkCore.SqlServer": {
               "target": "Package",
-              "version": "[6.0.30, )"
+              "version": "[8.0.11, )"
             },
             "Microsoft.EntityFrameworkCore.Tools": {
               "target": "Package",
-              "version": "[6.0.0, )"
+              "version": "[8.0.11, )"
             },
             "Swashbuckle.AspNetCore": {
               "target": "Package",
@@ -181,7 +193,7 @@
             },
             "System.IdentityModel.Tokens.Jwt": {
               "target": "Package",
-              "version": "[6.10.0, )"
+              "version": "[8.2.1, )"
             }
           },
           "imports": [
@@ -203,18 +215,18 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\7.0.102\\RuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.305/PortableRuntimeIdentifierGraph.json"
         }
       }
     },
-    "C:\\GolfLeaderboard\\GolfTournament\\GolfTournamentData\\GolfTournamentData.csproj": {
+    "C:\\Users\\bwhite\\Documents\\GitHub\\GolfLeaderboard\\GolfTournamentData\\GolfTournamentData.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\GolfLeaderboard\\GolfTournament\\GolfTournamentData\\GolfTournamentData.csproj",
+        "projectUniqueName": "C:\\Users\\bwhite\\Documents\\GitHub\\GolfLeaderboard\\GolfTournamentData\\GolfTournamentData.csproj",
         "projectName": "GolfTournamentData",
-        "projectPath": "C:\\GolfLeaderboard\\GolfTournament\\GolfTournamentData\\GolfTournamentData.csproj",
+        "projectPath": "C:\\Users\\bwhite\\Documents\\GitHub\\GolfLeaderboard\\GolfTournamentData\\GolfTournamentData.csproj",
         "packagesPath": "C:\\Users\\bwhite\\.nuget\\packages\\",
-        "outputPath": "C:\\GolfLeaderboard\\GolfTournament\\GolfTournamentData\\obj\\",
+        "outputPath": "C:\\Users\\bwhite\\Documents\\GitHub\\GolfLeaderboard\\GolfTournamentData\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\DevExpress 21.2\\Components\\Offline Packages",
@@ -228,7 +240,7 @@
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
         "originalTargetFrameworks": [
-          "net6.0"
+          "net8.0"
         ],
         "sources": {
           "C:\\Program Files (x86)\\DevExpress 21.2\\Components\\System\\Components\\Packages": {},
@@ -237,8 +249,8 @@
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
-          "net6.0": {
-            "targetAlias": "net6.0",
+          "net8.0": {
+            "targetAlias": "net8.0",
             "projectReferences": {}
           }
         },
@@ -246,31 +258,37 @@
           "warnAsError": [
             "NU1605"
           ]
-        }
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "direct"
+        },
+        "SdkAnalysisLevel": "9.0.300"
       },
       "frameworks": {
-        "net6.0": {
-          "targetAlias": "net6.0",
+        "net8.0": {
+          "targetAlias": "net8.0",
           "dependencies": {
             "Microsoft.EntityFrameworkCore.Design": {
               "target": "Package",
-              "version": "[6.0.0, )"
+              "version": "[8.0.11, )"
             },
             "Microsoft.EntityFrameworkCore.SqlServer": {
               "target": "Package",
-              "version": "[6.0.0, )"
+              "version": "[8.0.11, )"
             },
             "Microsoft.EntityFrameworkCore.Tools": {
               "target": "Package",
-              "version": "[6.0.0, )"
+              "version": "[8.0.11, )"
             },
             "Microsoft.Extensions.Configuration.Json": {
               "target": "Package",
-              "version": "[9.0.8, )"
+              "version": "[8.0.1, )"
             },
             "System.Text.Json": {
               "target": "Package",
-              "version": "[9.0.9, )"
+              "version": "[8.0.5, )"
             }
           },
           "imports": [
@@ -289,7 +307,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\7.0.102\\RuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.305/PortableRuntimeIdentifierGraph.json"
         }
       }
     }

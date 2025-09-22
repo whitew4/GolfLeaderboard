@@ -1,101 +1,133 @@
-// src/components/ScoreEntry.tsx
-import React, { useState } from "react";
-// ScoreEntry.tsx (inside src/components/player)
-import RoundSelector from "../common/RoundSelector";
-import { scoreService } from "../../services/apiService";
+// src/components/player/ScoreEntry.tsx
+import React, { useState } from 'react';
+import { scoreService, CreateScoreRequest } from '../../services/apiService';
 
-
-type Props = {
-  tournamentId: number;
+interface ScoreEntryProps {
   teamId: number;
-};
+  roundId: number;
+  holeNumber: number;
+  tournamentId?: number; // Optional prop
+  onScoreSubmitted?: () => void;
+}
 
-const ScoreEntryForm: React.FC<Props> = ({ tournamentId, teamId }) => {
-  const [roundId, setRoundId] = useState<number | null>(null);
-  const [holeNumber, setHoleNumber] = useState<number>(1);
-  const [strokes, setStrokes] = useState<number>(4);
-  const [par, setPar] = useState<number>(4);
-  const [msg, setMsg] = useState<string>("");
+const ScoreEntry: React.FC<ScoreEntryProps> = ({ 
+  teamId, 
+  roundId, 
+  holeNumber, 
+  tournamentId, // Accept but don't use - for backwards compatibility
+  onScoreSubmitted 
+}) => {
+  const [strokes, setStrokes] = useState<number>(0);
+  const [msg, setMsg] = useState<string>('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const submit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setMsg("");
-    try {
-      if (!roundId) throw new Error("Please select a round.");
-      if (holeNumber < 1 || holeNumber > 18) throw new Error("Hole must be 1–18.");
-      if (strokes <= 0) throw new Error("Strokes must be positive.");
+    
+    if (strokes <= 0) {
+      setMsg('Please enter a valid number of strokes');
+      return;
+    }
 
-      const res = await scoreService.createScore({
+    try {
+      setIsSubmitting(true);
+      const scoreData: CreateScoreRequest = {
         teamId,
         roundId,
         holeNumber,
-        strokes,
-        par,
-      });
+        strokes
+      };
 
-      setMsg(res?.message ?? "Score submitted successfully.");
+      await scoreService.createScore(scoreData);
+      
+      setMsg("Score submitted successfully.");
+      setStrokes(0);
+      
+      if (onScoreSubmitted) {
+        onScoreSubmitted();
+      }
     } catch (err: any) {
       const text =
         err?.response?.data?.error ??
-        err?.response?.data ??
         err?.message ??
-        "Error submitting score.";
-      setMsg(text);
+        'Error submitting score';
+      setMsg(`Error: ${text}`);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   return (
-    <form onSubmit={submit} className="flex flex-col gap-3 max-w-sm p-4 border rounded">
-      <RoundSelector
-        tournamentId={tournamentId}
-        value={roundId}
-        onChange={setRoundId}
-        autoSeedIfEmpty={true}
-        seedCount={2} // e.g. 2 days → 2 rounds
-      />
-
-      <label>
-        Hole Number
-        <input
-          type="number"
-          value={holeNumber}
-          min={1}
-          max={18}
-          onChange={(e) => setHoleNumber(Number(e.target.value))}
-          className="border rounded px-2 py-1 w-full"
-        />
-      </label>
-
-      <label>
-        Strokes
-        <input
-          type="number"
-          value={strokes}
-          min={1}
-          onChange={(e) => setStrokes(Number(e.target.value))}
-          className="border rounded px-2 py-1 w-full"
-        />
-      </label>
-
-      <label>
-        Par
-        <input
-          type="number"
-          value={par}
-          min={3}
-          max={6}
-          onChange={(e) => setPar(Number(e.target.value))}
-          className="border rounded px-2 py-1 w-full"
-        />
-      </label>
-
-      <button type="submit" className="bg-blue-600 text-white rounded px-4 py-2">
-        Submit Score
-      </button>
-
-      {msg && <p className="text-sm mt-2">{msg}</p>}
-    </form>
+    <div style={{
+      background: 'white',
+      padding: '20px',
+      borderRadius: '8px',
+      boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+      marginBottom: '15px'
+    }}>
+      <h3 style={{ marginTop: 0, color: '#333' }}>Hole {holeNumber}</h3>
+      <form onSubmit={handleSubmit}>
+        <div style={{ marginBottom: '15px' }}>
+          <label style={{
+            display: 'block',
+            marginBottom: '5px',
+            fontWeight: 'bold',
+            color: '#555'
+          }}>
+            Strokes:
+          </label>
+          <input
+            type="number"
+            value={strokes || ''}
+            onChange={(e) => setStrokes(parseInt(e.target.value) || 0)}
+            min="1"
+            max="15"
+            required
+            style={{
+              width: '100%',
+              padding: '8px 12px',
+              border: '1px solid #ddd',
+              borderRadius: '4px',
+              fontSize: '16px'
+            }}
+          />
+        </div>
+        <button 
+          type="submit" 
+          disabled={isSubmitting || strokes <= 0}
+          style={{
+            background: (isSubmitting || strokes <= 0) ? '#ccc' : '#28a745',
+            color: 'white',
+            border: 'none',
+            padding: '10px 20px',
+            borderRadius: '5px',
+            cursor: (isSubmitting || strokes <= 0) ? 'not-allowed' : 'pointer',
+            fontSize: '14px',
+            width: '100%'
+          }}
+        >
+          {isSubmitting ? 'Submitting...' : 'Submit Score'}
+        </button>
+      </form>
+      {msg && (
+        <div style={{
+          marginTop: '10px',
+          padding: '8px 12px',
+          borderRadius: '4px',
+          fontSize: '14px',
+          background: msg.includes('Error') ? '#f8d7da' : '#d4edda',
+          color: msg.includes('Error') ? '#721c24' : '#155724',
+          border: msg.includes('Error') ? '1px solid #f5c6cb' : '1px solid #c3e6cb'
+        }}>
+          {msg}
+        </div>
+      )}
+    </div>
   );
 };
 
-export default ScoreEntryForm;
+// Named export
+export { ScoreEntry };
+
+// Default export
+export default ScoreEntry;
